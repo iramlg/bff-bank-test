@@ -1,6 +1,5 @@
 var express = require('express');
 var LocalStorage = require('node-localstorage').LocalStorage;
-var celcoin = require('@api/celcoin');
 const axios = require('axios');
 var router = express.Router();
 
@@ -26,6 +25,7 @@ const updateToken = async () => {
 
   const data = await response.json();
   // console.log(data);
+  axios.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`;
   localStorage.setItem('token', data.access_token);
 
   return;
@@ -37,11 +37,18 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/celcoin', async function(req, res, next) {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    await updateToken();
+  }
+
   const { url, method, payload } = req.body;
   try {
     const response = await axios({
       url,
-      method: method
+      method: method,
+      data: payload
     });
   
     res.send(response.data);

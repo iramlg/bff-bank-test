@@ -6,7 +6,6 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
-    "@api/celcoin": "file:.api/apis/celcoin",
     "axios": "^1.7.2",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
