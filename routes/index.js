@@ -8,25 +8,29 @@ const localStorage = new LocalStorage('./scratch');
 axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
 
 const updateToken = async () => {
-  const response = await fetch("https://sandbox.openfinance.celcoin.dev/v5/token", {
-    "headers": {
-      "accept": "application/json",
-      "content-type": "multipart/form-data; boundary=----WebKitFormBoundaryfJBO4h5FTVBQZPAa",
-      "sec-ch-ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"Google Chrome\";v=\"126\"",
-      "sec-ch-ua-mobile": "?0",
-      "sec-ch-ua-platform": "\"macOS\"",
-      "x-readme-api-explorer": "5.122.0",
-      "Referer": "https://developers.celcoin.com.br/",
-      "Referrer-Policy": "strict-origin-when-cross-origin"
-    },
-    "body": "------WebKitFormBoundaryfJBO4h5FTVBQZPAa\r\nContent-Disposition: form-data; name=\"client_id\"\r\n\r\n41b44ab9a56440.teste.celcoinapi.v5\r\n------WebKitFormBoundaryfJBO4h5FTVBQZPAa\r\nContent-Disposition: form-data; name=\"grant_type\"\r\n\r\nclient_credentials\r\n------WebKitFormBoundaryfJBO4h5FTVBQZPAa\r\nContent-Disposition: form-data; name=\"client_secret\"\r\n\r\ne9d15cde33024c1494de7480e69b7a18c09d7cd25a8446839b3be82a56a044a3\r\n------WebKitFormBoundaryfJBO4h5FTVBQZPAa--\r\n",
-    "method": "POST"
-  });
+  const form = new FormData();
+  form.append('grant_type', 'client_credentials');
+  form.append('client_secret', 'a576059add104a8e8bdb7b5a0206f30f913c7220cfcb4e949e153d19e80bc25c');
+  form.append('client_id', '4b1d496707.scaleup.celcoinapi.v5');
 
-  const data = await response.json();
-  // console.log(data);
-  axios.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`;
-  localStorage.setItem('token', data.access_token);
+  const options = {method: 'POST', headers: {accept: 'application/json'}};
+
+  options.body = form;
+
+  await fetch('https://sandbox.openfinance.celcoin.dev/v5/token', options)
+    .then(response => response.json())
+    .then(response => {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${response.access_token}`;
+      localStorage.setItem('token', response.access_token);
+    })
+    .catch(err => console.error(err));
+
+
+
+
+
+
+  await setTimeout(()=>{}, 1000)
 
   return;
 }
@@ -38,11 +42,14 @@ router.get('/', function(req, res, next) {
 
 router.post('/celcoin', async function(req, res, next) {
   const token = localStorage.getItem('token');
-
+  console.log(token)
   if (!token) {
     await updateToken();
   }
 
+  if (!token) {
+    return res.sendStatus(401);
+  }
   const { url, method, payload } = req.body;
   try {
     const response = await axios({
@@ -58,11 +65,23 @@ router.post('/celcoin', async function(req, res, next) {
       return res.sendStatus(401);
       // redo requrest
     }
+
+    if (e.response.status === 404) {
+      // await updateToken();
+      return res.sendStatus(404);
+      // redo requrest
+    }
     
     console.log('err /new: ', e.response)
     return res.status(500).send({ error: 'Something failed!' });
   }
 });
+
+
+router.post("/hook-celcoin", (req, res) => {
+  console.log(req.body) // Call your action on the request here
+  res.status(200).end() // Responding is important
+})
 
 module.exports = router;
 
